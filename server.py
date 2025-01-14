@@ -385,7 +385,7 @@ class GUI:
         self.gui_config.diffusion_steps = int(10)
         self.gui_config.inference_cfg_rate = float("0.7")
         self.gui_config.max_prompt_length = float("3")
-        self.gui_config.block_time = float("0.18")  # 0.54
+        self.gui_config.block_time = float("0.25")  # 0.54
         self.gui_config.crossfade_time = float("0.02")
         self.gui_config.extra_time_ce = float("2.5")
         self.gui_config.extra_time = float("0.5")
@@ -482,7 +482,7 @@ class GUI:
         """
         Audio block callback function
         """
-        print(indata.shape)
+        print(f"indata.shape: {indata.shape} - outdata.shape: {outdata.shape}")
         start_time = time.perf_counter()
         indata = librosa.to_mono(indata.T)
 

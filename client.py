@@ -53,7 +53,7 @@ class GUIConfig:
         self.sg_hostapi: str = ""
         self.sg_input_device: str = ""
         self.sg_output_device: str = ""
-        self.samplerate: int = 22050
+        self.samplerate: int = 44100
         self.channels: int = 2  # stereo
 
 
@@ -373,6 +373,10 @@ class GUI:
             if event == "start_vc" and not flag_vc:
                 if self.initialize_variables(values):
                     # self.start_vc() # start voice conversion on server
+                    print("Starting voice conversion")
+                    print(f"Blocktime: {self.gui_config.block_time}")
+                    print(f"Block frame: {self.block_frame}")
+                    print(f"ZC: {self.zc}")
 
                     self.start_stream()
                     settings = {
@@ -434,13 +438,14 @@ class GUI:
         self.gui_config.diffusion_steps = int(10)
         self.gui_config.inference_cfg_rate = float("0.7")
         self.gui_config.max_prompt_length = float("3")
-        self.gui_config.block_time = float("0.18")  # 0.54
+        self.gui_config.block_time = float("0.3")  # 0.54
         self.gui_config.crossfade_time = float("0.02")
         self.gui_config.extra_time_ce = float("2.5")
         self.gui_config.extra_time = float("0.5")
         self.gui_config.extra_time_right = float("0.02")
 
         self.zc = self.gui_config.samplerate // 50  # 44100 // 100 = 441
+        print(f"Blocktime: {self.gui_config.block_time}")
         self.block_frame = (
             int(np.round(self.gui_config.block_time * self.gui_config.samplerate / self.zc))
             * self.zc
@@ -470,6 +475,10 @@ class GUI:
             if not self.loop.run_until_complete(self.connect_websocket()):
                 return
 
+            print("Starting stream")
+            print(
+                f"Blocksize: {self.block_frame}, Samplerate: {self.gui_config.samplerate}, Channels: {self.gui_config.channels}"
+            )
             self.stream = sd.Stream(
                 callback=self.audio_callback,
                 blocksize=self.block_frame,
@@ -503,6 +512,7 @@ class GUI:
             print(status)
 
         try:
+            print(indata.shape, outdata.shape)
             self.loop.run_until_complete(self.websocket.send(indata.tobytes()))
 
             processed_audio = self.loop.run_until_complete(self.websocket.recv())
