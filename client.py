@@ -512,13 +512,17 @@ class GUI:
             print(status)
 
         try:
+            data_dict = {"shape": indata.shape, "data": indata.tobytes()}
             print(indata.shape, outdata.shape)
-            self.loop.run_until_complete(self.websocket.send(indata.tobytes()))
+            self.loop.run_until_complete(self.websocket.send(json.dumps(data_dict)))
 
             processed_audio = self.loop.run_until_complete(self.websocket.recv())
+            processed_dict = json.loads(processed_audio)
+            shape = tuple(processed_dict["shape"])
+            processed_array = np.frombuffer(
+                processed_dict["data"].encode(), dtype=np.float32
+            ).reshape(shape)
 
-            processed_array = np.frombuffer(processed_audio, dtype=np.float32)
-            # processed_array = processed_array.reshape(-1, self.gui_config.channels)
             outdata[:] = processed_array
             return outdata
 

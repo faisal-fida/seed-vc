@@ -1,4 +1,5 @@
 import os
+import json
 import sys
 import time
 import argparse
@@ -616,15 +617,23 @@ class WebSocketAudioServer:
 
             async for message in websocket:
                 print(f"Received message's shape: {len(message)}")
-                audio_data = np.frombuffer(message, dtype=np.float32)
+                data_dict = json.loads(message)
+                shape = tuple(data_dict["shape"])
 
-                outdata = np.zeros((audio_data.shape[0], 2), dtype=np.float32)
+                audio_data = np.frombuffer(data_dict["data"].encode(), dtype=np.float32).reshape(
+                    shape
+                )
+
+                outdata = np.zeros_like(audio_data)
+                processed_audio = self.gui.audio_callback(audio_data, outdata)
                 print(f"Received audio data: {audio_data.shape}")
                 print(f"Outdata shape: {outdata.shape}")
 
-                processed_audio = self.gui.audio_callback(audio_data, outdata)
-
-                await websocket.send(processed_audio.tobytes())
+                response_dict = {
+                    "shape": processed_audio.shape,
+                    "data": processed_audio.tobytes().decode(),
+                }
+                await websocket.send(json.dumps(response_dict))
 
         except websockets.ConnectionClosed:
             print("Client disconnected")
