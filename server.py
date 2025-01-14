@@ -476,11 +476,8 @@ class GUI:
         print(f"indata.shape: {indata.shape} - outdata.shape: {outdata.shape}")
         print("Starting stream")
         print(
-            f"Blocksize: {self.block_frame}, Samplerate: {self.gui_config.samplerate}, Channels: {self.gui_config.channels}"
+            f"Blocksize: {self.block_frame}, Samplerate: {self.gui_config.samplerate}, Channels: {self.gui_config.channels}, Blocktime: {self.gui_config.block_time}, ZC: {self.zc}"
         )
-        print("Starting voice conversion")
-        print(f"Blocktime: {self.gui_config.block_time}")
-        print(f"ZC: {self.zc}")
         start_time = time.perf_counter()
         indata = librosa.to_mono(indata.T)
 
@@ -571,7 +568,6 @@ class GUI:
         self.sola_buffer[:] = infer_wav[
             self.block_frame : self.block_frame + self.sola_buffer_frame
         ]
-        print(f"outdata.shape: {outdata.shape}")
         outdata[:] = (
             infer_wav[: self.block_frame].repeat(self.gui_config.channels, 1).t().cpu().numpy()
         )
@@ -600,7 +596,6 @@ class WebSocketAudioServer:
             self.gui.start_vc()
 
             async for message in websocket:
-                print(f"Received message's shape: {len(message)}")
                 data_dict = json.loads(message)
                 shape = tuple(data_dict["shape"])
 

@@ -369,12 +369,6 @@ class GUI:
                 self.window["sg_output_device"].Update(value=self.gui_config.sg_output_device)
             if event == "start_vc" and not flag_vc:
                 if self.initialize_variables(values):
-                    # self.start_vc() # start voice conversion on server
-                    print("Starting voice conversion")
-                    print(f"Blocktime: {self.gui_config.block_time}")
-                    print(f"Block frame: {self.block_frame}")
-                    print(f"ZC: {self.zc}")
-
                     self.start_stream()
                     settings = {
                         "reference_audio_path": values["reference_audio_path"],
@@ -426,7 +420,6 @@ class GUI:
         ]
 
         self.zc = self.gui_config.samplerate // 50  # 44100 // 100 = 441
-        print(f"Blocktime: {self.gui_config.block_time}")
         self.block_frame = (
             int(np.round(self.gui_config.block_time * self.gui_config.samplerate / self.zc))
             * self.zc
@@ -456,10 +449,10 @@ class GUI:
             if not self.loop.run_until_complete(self.connect_websocket()):
                 return
 
-            print("Starting stream")
             print(
-                f"Blocksize: {self.block_frame}, Samplerate: {self.gui_config.samplerate}, Channels: {self.gui_config.channels}"
+                f"Blocksize: {self.block_frame}, Samplerate: {self.gui_config.samplerate}, Channels: {self.gui_config.channels}, Blocktime: {self.gui_config.block_time}, ZC: {self.zc}"
             )
+
             self.stream = sd.Stream(
                 callback=self.audio_callback,
                 blocksize=self.block_frame,
@@ -492,12 +485,13 @@ class GUI:
         if status:
             print(status)
 
+        print(f"indata.shape: {indata.shape} - outdata.shape: {outdata.shape}")
+
         try:
             data_dict = {
                 "shape": indata.shape,
                 "data": base64.b64encode(indata.tobytes()).decode("utf-8"),
             }
-            print(indata.shape, outdata.shape)
             self.loop.run_until_complete(self.websocket.send(json.dumps(data_dict)))
 
             processed_audio = self.loop.run_until_complete(self.websocket.recv())
