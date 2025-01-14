@@ -1,4 +1,5 @@
 import os
+import base64
 import json
 import sys
 import time
@@ -620,9 +621,8 @@ class WebSocketAudioServer:
                 data_dict = json.loads(message)
                 shape = tuple(data_dict["shape"])
 
-                audio_data = np.frombuffer(data_dict["data"].encode(), dtype=np.float32).reshape(
-                    shape
-                )
+                decoded_data = base64.b64decode(data_dict["data"])
+                audio_data = np.frombuffer(decoded_data, dtype=np.float32).reshape(shape)
 
                 outdata = np.zeros_like(audio_data)
                 processed_audio = self.gui.audio_callback(audio_data, outdata)
@@ -631,7 +631,7 @@ class WebSocketAudioServer:
 
                 response_dict = {
                     "shape": processed_audio.shape,
-                    "data": processed_audio.tobytes().decode(),
+                    "data": base64.b64encode(processed_audio.tobytes()).decode("utf-8"),
                 }
                 await websocket.send(json.dumps(response_dict))
 

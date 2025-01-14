@@ -1,4 +1,5 @@
 import os
+import base64
 import sys
 import shutil
 import json
@@ -512,16 +513,18 @@ class GUI:
             print(status)
 
         try:
-            data_dict = {"shape": indata.shape, "data": indata.tobytes()}
+            data_dict = {
+                "shape": indata.shape,
+                "data": base64.b64encode(indata.tobytes()).decode("utf-8"),
+            }
             print(indata.shape, outdata.shape)
             self.loop.run_until_complete(self.websocket.send(json.dumps(data_dict)))
 
             processed_audio = self.loop.run_until_complete(self.websocket.recv())
             processed_dict = json.loads(processed_audio)
             shape = tuple(processed_dict["shape"])
-            processed_array = np.frombuffer(
-                processed_dict["data"].encode(), dtype=np.float32
-            ).reshape(shape)
+            decoded_data = base64.b64decode(processed_dict["data"])
+            processed_array = np.frombuffer(decoded_data, dtype=np.float32).reshape(shape)
 
             outdata[:] = processed_array
             return outdata
