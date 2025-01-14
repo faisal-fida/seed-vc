@@ -483,6 +483,13 @@ class GUI:
         Audio block callback function
         """
         print(f"indata.shape: {indata.shape} - outdata.shape: {outdata.shape}")
+        print("Starting stream")
+        print(
+            f"Blocksize: {self.block_frame}, Samplerate: {self.gui_config.samplerate}, Channels: {self.gui_config.channels}"
+        )
+        print("Starting voice conversion")
+        print(f"Blocktime: {self.gui_config.block_time}")
+        print(f"ZC: {self.zc}")
         start_time = time.perf_counter()
         indata = librosa.to_mono(indata.T)
 
