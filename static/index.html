@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Real-Time Voice Changer</title>
+  </head>
+  <body>
+    <h1>Real-Time Voice Changer</h1>
+    <label for="inputSelect">Select Input Device:</label>
+    <select id="inputSelect"></select>
+    <br /><br />
+    <label for="outputSelect">Select Output Device:</label>
+    <select id="outputSelect"></select>
+    <br /><br />
+    <button id="startButton">Start Voice Conversion</button>
+    <button id="stopButton">Stop Voice Conversion</button>
+
+    <script>
+      let ws;
+      let mediaStream;
+      let audioContext;
+      let processor;
+      let source;
+      let playerNode;
+
+      // Function to populate the input and output device lists
+      async function populateDeviceLists() {
+        if (
+          !navigator.mediaDevices ||
+          !navigator.mediaDevices.enumerateDevices
+        ) {
+          console.log("enumerateDevices() not supported.");
+          return;
+        }
+
+        const devices = await navigator.mediaDevices.enumerateDevices();
+        const inputSelect = document.getElementById("inputSelect");
+        const outputSelect = document.getElementById("outputSelect");
+
+        // Clear existing options
+        inputSelect.innerHTML = "";
+        outputSelect.innerHTML = "";
+
+        // Create default option
+        const defaultInputOption = document.createElement("option");
+        defaultInputOption.value = "";
+        defaultInputOption.text = "Default Input Device";
+        inputSelect.appendChild(defaultInputOption);
+
+        const defaultOutputOption = document.createElement("option");
+        defaultOutputOption.value = "";
+        defaultOutputOption.text = "Default Output Device";
+        outputSelect.appendChild(defaultOutputOption);
+
+        devices.forEach((device) => {
+          const option = document.createElement("option");
+          option.value = device.deviceId;
+          if (device.kind === "audioinput") {
+            option.text = device.label || `Microphone ${inputSelect.length}`;
+            inputSelect.appendChild(option);
+          } else if (device.kind === "audiooutput") {
+            option.text = device.label || `Speaker ${outputSelect.length}`;
+            outputSelect.appendChild(option);
+          }
+        });
+      }
+
+      // Call the function to populate device lists
+      populateDeviceLists();
+
+      // Event listener for the Start button
+      document.getElementById("startButton").onclick = async () => {
+        // Get selected device IDs
+        const inputSelect = document.getElementById("inputSelect");
+        const inputDeviceId = inputSelect.value;
+
+        const outputSelect = document.getElementById("outputSelect");
+        const outputDeviceId = outputSelect.value;
+
+        // WebSocket connection
+        ws = new WebSocket(`ws://${window.location.host}/ws`);
+        ws.binaryType = "arraybuffer";
+
+        // Constraints for getUserMedia
+        const constraints = {
+          audio: {
+            deviceId: inputDeviceId ? { exact: inputDeviceId } : undefined,
+          },
+        };
+
+        mediaStream = await navigator.mediaDevices.getUserMedia(constraints);
+
+        audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        const sampleRate = audioContext.sampleRate; // Typically 44100 Hz or 48000 Hz
+
+        await audioContext.audioWorklet.addModule("/static/processor.js");
+        await audioContext.audioWorklet.addModule(
+          "/static/player-processor.js"
+        );
+
+        processor = new AudioWorkletNode(audioContext, "voice-processor");
+        playerNode = new AudioWorkletNode(audioContext, "player-processor");
+
+        source = audioContext.createMediaStreamSource(mediaStream);
+        source.connect(processor);
+
+        // Create a GainNode to control volume (optional)
+        const gainNode = audioContext.createGain();
+
+        // Connect processor to gainNode
+        processor.connect(gainNode);
+
+        // Set the output device if sinkId is supported and output device is selected
+        const sinkId = outputDeviceId || "default";
+        await audioContext.setSinkId(sinkId);
+
+        // if ("setSinkId" in audioContext.destination) {
+        //   try {
+        //     const sinkId = outputDeviceId || "default";
+        //     await audioContext.destination.setSinkId(sinkId);
+        //     console.log(`Output device set to ${sinkId}`);
+        //   } catch (err) {
+        //     console.error(`Failed to set output device: ${err}`);
+        //   }
+        // } else {
+        //   console.warn("setSinkId is not supported in your browser.");
+        // }
+
+        // Connect gainNode to playerNode and then to destination
+        gainNode.connect(playerNode).connect(audioContext.destination);
+
+        processor.port.onmessage = (event) => {
+          const inputBuffer = event.data;
+          // Send audio data to server
+          if (ws.readyState === WebSocket.OPEN) {
+            ws.send(inputBuffer);
+          }
+        };
+
+        ws.onmessage = function (event) {
+          const arrayBuffer = event.data;
+          // Assume that the server returns Float32Array data
+          // Send the audio data to the player processor
+          playerNode.port.postMessage(arrayBuffer);
+        };
+
+        ws.onclose = function () {
+          console.log("WebSocket connection closed.");
+        };
+      };
+
+      document.getElementById("stopButton").onclick = () => {
+        if (processor) {
+          processor.disconnect();
+        }
+        if (source) {
+          source.disconnect();
+        }
+        if (mediaStream) {
+          mediaStream.getTracks().forEach((track) => track.stop());
+        }
+        if (ws) {
+          ws.close();
+        }
+        // Disconnect the playerNode
+        if (playerNode) {
+          playerNode.disconnect();
+        }
+      };
+    </script>
+  </body>
+</html>
