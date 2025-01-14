@@ -1,13 +1,14 @@
 import os
 import sys
 import shutil
-import torch
 import json
-import re
+import asyncio
 from multiprocessing import cpu_count
 import numpy as np
 import FreeSimpleGUI as sg
 import sounddevice as sd
+
+import websockets
 
 os.environ["OMP_NUM_THREADS"] = "4"
 if sys.platform == "darwin":
@@ -24,8 +25,6 @@ warnings.simplefilter("ignore")
 # Load model and configuration
 flag_vc = False
 prompt_len = 3  # in seconds
-
-device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
 
 def printt(strr, *args):
@@ -54,6 +53,8 @@ class GUIConfig:
         self.sg_hostapi: str = ""
         self.sg_input_device: str = ""
         self.sg_output_device: str = ""
+        self.samplerate: int = 22050
+        self.channels: int = 2  # stereo
 
 
 class GUI:
@@ -67,7 +68,7 @@ class GUI:
         self.input_devices_indices = None
         self.output_devices_indices = None
         self.stream = None
-        self.sample_rate = 22050
+        self.websocket = None
         self.update_devices()
         self.launcher()
 
@@ -370,9 +371,9 @@ class GUI:
                 self.window["sg_output_device"].Update(values=self.output_devices)
                 self.window["sg_output_device"].Update(value=self.gui_config.sg_output_device)
             if event == "start_vc" and not flag_vc:
-                if self.set_values(values):
-                    printt("cuda_is_available: %s", torch.cuda.is_available())
-                    self.start_vc()
+                if self.initialize_variables(values):
+                    # self.start_vc() # start voice conversion on server
+
                     self.start_stream()
                     settings = {
                         "reference_audio_path": values["reference_audio_path"],
@@ -418,35 +419,41 @@ class GUI:
             elif event == "stop_vc" or event != "start_vc":
                 self.stop_stream()
 
-    def set_values(self, values):
-        if len(values["reference_audio_path"].strip()) == 0:
-            sg.popup("Choose an audio file")
-            return False
-        pattern = re.compile("[^\x00-\x7f]+")
-        if pattern.findall(values["reference_audio_path"]):
-            sg.popup("audio file path contains non-ascii characters")
-            return False
+    def initialize_variables(self, values):
         self.set_devices(values["sg_input_device"], values["sg_output_device"])
         self.gui_config.sg_hostapi = values["sg_hostapi"]
         self.gui_config.sg_wasapi_exclusive = values["sg_wasapi_exclusive"]
         self.gui_config.sg_input_device = values["sg_input_device"]
         self.gui_config.sg_output_device = values["sg_output_device"]
-        self.gui_config.reference_audio_path = values["reference_audio_path"]
         self.gui_config.sr_type = ["sr_model", "sr_device"][
             [
                 values["sr_model"],
                 values["sr_device"],
             ].index(True)
         ]
-        self.gui_config.diffusion_steps = values["diffusion_steps"]
-        self.gui_config.inference_cfg_rate = values["inference_cfg_rate"]
-        self.gui_config.max_prompt_length = values["max_prompt_length"]
-        self.gui_config.block_time = values["block_time"]
-        self.gui_config.crossfade_time = values["crossfade_length"]
-        self.gui_config.extra_time_ce = values["extra_time_ce"]
-        self.gui_config.extra_time = values["extra_time"]
-        self.gui_config.extra_time_right = values["extra_time_right"]
+        self.gui_config.diffusion_steps = int(10)
+        self.gui_config.inference_cfg_rate = float("0.7")
+        self.gui_config.max_prompt_length = float("3")
+        self.gui_config.block_time = float("0.18")  # 0.54
+        self.gui_config.crossfade_time = float("0.02")
+        self.gui_config.extra_time_ce = float("2.5")
+        self.gui_config.extra_time = float("0.5")
+        self.gui_config.extra_time_right = float("0.02")
+
+        self.zc = self.gui_config.samplerate // 50  # 44100 // 100 = 441
+        self.block_frame = (
+            int(np.round(self.gui_config.block_time * self.gui_config.samplerate / self.zc))
+            * self.zc
+        )
         return True
+
+    async def connect_websocket(self):
+        try:
+            self.websocket = await websockets.connect("ws://localhost:6006")
+            return True
+        except Exception as e:
+            sg.popup(f"Failed to connect to server: {e}")
+            return False
 
     def start_stream(self):
         global flag_vc
@@ -456,6 +463,13 @@ class GUI:
                 extra_settings = sd.WasapiSettings(exclusive=True)
             else:
                 extra_settings = None
+
+            self.loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(self.loop)
+
+            if not self.loop.run_until_complete(self.connect_websocket()):
+                return
+
             self.stream = sd.Stream(
                 callback=self.audio_callback,
                 blocksize=self.block_frame,
@@ -474,13 +488,34 @@ class GUI:
                 self.stream.abort()
                 self.stream.close()
                 self.stream = None
+            if self.websocket is not None:
+                self.loop.run_until_complete(self.websocket.close())
+                self.websocket = None
+            if self.loop is not None:
+                self.loop.close()
+                self.loop = None
 
     def audio_callback(self, indata: np.ndarray, outdata: np.ndarray, frames, times, status):
         """
-        Audio block callback function
+        Audio block callback function that sends audio to server and receives processed audio
         """
-        printt("callback")
-        pass
+        if status:
+            print(status)
+
+        try:
+            self.loop.run_until_complete(self.websocket.send(indata.tobytes()))
+
+            processed_audio = self.loop.run_until_complete(self.websocket.recv())
+
+            processed_array = np.frombuffer(processed_audio, dtype=np.float32)
+            processed_array = processed_array.reshape(-1, self.gui_config.channels)
+            outdata[:] = processed_array
+            return outdata
+
+        except Exception as e:
+            print(f"Error in audio callback: {e}")
+            outdata.fill(0)
+            return outdata
 
     def update_devices(self, hostapi_name=None):
         """Get input and output devices."""
