@@ -358,7 +358,7 @@ class GUIConfig:
     def __init__(self) -> None:
         self.reference_audio_path: str = ""
         self.diffusion_steps: int = 10
-        self.block_time: float = 0.25
+        self.block_time: float = 0.3
         self.crossfade_time: float = 0.05
         self.extra_time_ce: float = 2.5
         self.extra_time: float = 0.5
@@ -385,7 +385,7 @@ class GUI:
         self.gui_config.diffusion_steps = int(10)
         self.gui_config.inference_cfg_rate = float("0.7")
         self.gui_config.max_prompt_length = float("3")
-        self.gui_config.block_time = float("0.25")  # 0.54
+        self.gui_config.block_time = float("0.3")  # 0.54
         self.gui_config.crossfade_time = float("0.02")
         self.gui_config.extra_time_ce = float("2.5")
         self.gui_config.extra_time = float("0.5")
@@ -397,7 +397,7 @@ class GUI:
         self.reference_wav, _ = librosa.load(
             self.gui_config.reference_audio_path, sr=self.model_set[-1]["sampling_rate"]
         )
-        self.gui_config.samplerate = self.model_set[-1]["sampling_rate"]
+        self.gui_config.samplerate = 44100
         self.gui_config.channels = 2
         self.zc = self.gui_config.samplerate // 50  # 44100 // 100 = 441
         self.block_frame = (
