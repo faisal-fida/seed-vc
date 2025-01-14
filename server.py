@@ -618,6 +618,8 @@ class WebSocketAudioServer:
                 audio_data = np.frombuffer(message, dtype=np.float32)
 
                 outdata = np.zeros((audio_data.shape[0], 2), dtype=np.float32)
+                print(f"Received audio data: {audio_data.shape}")
+                print(f"Outdata shape: {outdata.shape}")
 
                 processed_audio = self.gui.audio_callback(audio_data, outdata)
 
