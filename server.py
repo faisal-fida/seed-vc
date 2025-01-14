@@ -620,7 +620,8 @@ class WebSocketAudioServer:
         except websockets.ConnectionClosed:
             print("Client disconnected")
         finally:
-            self.gui.stop_stream()
+            # self.gui.stop_stream()
+            print("Stream stopped")
 
     async def start_server(self, host="0.0.0.0", port=6006):
         async with websockets.serve(self.process_audio, host, port):
