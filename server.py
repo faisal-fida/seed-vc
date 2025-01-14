@@ -579,6 +579,7 @@ class GUI:
         self.sola_buffer[:] = infer_wav[
             self.block_frame : self.block_frame + self.sola_buffer_frame
         ]
+        print(f"outdata.shape: {outdata.shape}")
         outdata[:] = (
             infer_wav[: self.block_frame].repeat(self.gui_config.channels, 1).t().cpu().numpy()
         )
@@ -609,9 +610,7 @@ class WebSocketAudioServer:
             async for message in websocket:
                 audio_data = np.frombuffer(message, dtype=np.float32)
 
-                outdata = np.zeros(
-                    (len(audio_data), self.gui.gui_config.channels), dtype=np.float32
-                )
+                outdata = np.zeros((audio_data.shape[0], 2), dtype=np.float32)
 
                 processed_audio = self.gui.audio_callback(audio_data, outdata)
 

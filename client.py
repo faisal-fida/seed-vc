@@ -508,7 +508,7 @@ class GUI:
             processed_audio = self.loop.run_until_complete(self.websocket.recv())
 
             processed_array = np.frombuffer(processed_audio, dtype=np.float32)
-            processed_array = processed_array.reshape(-1, self.gui_config.channels)
+            # processed_array = processed_array.reshape(-1, self.gui_config.channels)
             outdata[:] = processed_array
             return outdata
 
