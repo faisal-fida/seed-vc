@@ -72,6 +72,8 @@ class GUI:
         self.websocket = None
         self.update_devices()
         self.launcher()
+        self.audio_array_1 = []
+        self.audio_array_2 = []
 
     def load(self):
         try:
@@ -495,6 +497,8 @@ class GUI:
         if status:
             print(status)
 
+        audio_array = np.concatenate([self.audio_array_1, indata])
+
         try:
             data_dict = {
                 "shape": indata.shape,
@@ -516,6 +520,11 @@ class GUI:
             print(f"Error in audio callback: {e}")
             outdata.fill(0)
             return outdata
+
+        finally:
+            import soundfile as sf
+
+            sf.write("input.wav", audio_array, self.gui_config.samplerate, "PCM_16")
 
     def update_devices(self, hostapi_name=None):
         """Get input and output devices."""

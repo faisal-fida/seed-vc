@@ -616,8 +616,6 @@ class WebSocketAudioServer:
                 decoded_data = base64.b64decode(data_dict["data"])
                 audio_data = np.frombuffer(decoded_data, dtype=np.float32).reshape(shape)
 
-                # save audio data to file
-
                 self.audio_array.append(audio_data)
 
                 outdata = np.zeros_like(audio_data)
