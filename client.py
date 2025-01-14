@@ -43,7 +43,7 @@ class GUIConfig:
     def __init__(self) -> None:
         self.reference_audio_path: str = ""
         self.sr_type: str = "sr_model"
-        self.block_time: float = 0.18  # s
+        self.block_time: float = 0.25  # s
         self.threhold: int = -60
         self.crossfade_time: float = 0.05
         self.extra_time_ce: float = 2.5
