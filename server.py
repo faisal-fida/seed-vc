@@ -386,8 +386,8 @@ class GUI:
         self.gui_config.reference_audio_path = "examples/reference/trump_0.wav"
         self.gui_config.diffusion_steps = int(5)
         self.gui_config.inference_cfg_rate = float("1")
-        self.gui_config.max_prompt_length = float("2.5")
-        self.gui_config.block_time = float("0.3")  # change in client too
+        self.gui_config.max_prompt_length = float("3")
+        self.gui_config.block_time = float("0.18")  # change in client too
         self.gui_config.crossfade_time = float("0.02")  # 0.04
         self.gui_config.extra_time_ce = float("3.2")
         self.gui_config.extra_time = float("0.5")
