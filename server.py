@@ -27,7 +27,6 @@ from hf_utils import load_custom_model_from_hf  # noqa
 from modules.commons import str2bool  # noqa
 
 # Load model and configuration
-device = None
 prompt_condition, mel2, style2 = None, None, None
 reference_wav_name = ""
 prompt_len = 3  # in seconds

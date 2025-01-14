@@ -449,7 +449,7 @@ class GUI:
 
     async def connect_websocket(self):
         try:
-            self.websocket = await websockets.connect("ws://localhost:6006")
+            self.websocket = await websockets.connect("ws://20.99.233.208:6006")
             return True
         except Exception as e:
             sg.popup(f"Failed to connect to server: {e}")
