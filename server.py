@@ -615,9 +615,10 @@ class WebSocketAudioServer:
             self.gui.start_vc()
 
             async for message in websocket:
-                audio_data = np.frombuffer(message, dtype=np.float16)
+                print(f"Received message's shape: {len(message)}")
+                audio_data = np.frombuffer(message, dtype=np.float32)
 
-                outdata = np.zeros((audio_data.shape[0], 2), dtype=np.float16)
+                outdata = np.zeros((audio_data.shape[0], 2), dtype=np.float32)
                 print(f"Received audio data: {audio_data.shape}")
                 print(f"Outdata shape: {outdata.shape}")
 
