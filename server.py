@@ -385,7 +385,7 @@ class GUI:
     def initialize_variables(self):
         self.gui_config.reference_audio_path = "examples/reference/trump_0.wav"
         self.gui_config.diffusion_steps = int(5)
-        self.gui_config.inference_cfg_rate = float("0.5")
+        self.gui_config.inference_cfg_rate = float("1")
         self.gui_config.max_prompt_length = float("2.5")
         self.gui_config.block_time = float("0.3")  # change in client too
         self.gui_config.crossfade_time = float("0.02")  # 0.04
