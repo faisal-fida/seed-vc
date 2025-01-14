@@ -399,7 +399,7 @@ class GUI:
         self.reference_wav, _ = librosa.load(
             self.gui_config.reference_audio_path, sr=self.model_set[-1]["sampling_rate"]
         )
-        self.gui_config.samplerate = 22050
+        self.gui_config.samplerate = 44100
         self.gui_config.channels = 2
         self.zc = self.gui_config.samplerate // 50  # 44100 // 100 = 441
         self.block_frame = (

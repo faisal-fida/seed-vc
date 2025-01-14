@@ -53,7 +53,7 @@ class GUIConfig:
         self.sg_hostapi: str = ""
         self.sg_input_device: str = ""
         self.sg_output_device: str = ""
-        self.samplerate: int = 22050
+        self.samplerate: int = 44100
         self.channels: int = 2  # stereo
 
 
