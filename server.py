@@ -383,7 +383,7 @@ class GUI:
         self.initialize_variables()
 
     def initialize_variables(self):
-        self.gui_config.reference_audio_path = "examples/reference/s3p2.wav"
+        self.gui_config.reference_audio_path = "examples/reference/trump_0.wav"
         self.gui_config.diffusion_steps = int(10)
         self.gui_config.inference_cfg_rate = float("0.7")
         self.gui_config.max_prompt_length = float("3")
