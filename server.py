@@ -358,15 +358,15 @@ n_cpu = cpu_count()
 
 class GUIConfig:
     def __init__(self) -> None:
-        self.reference_audio_path: str = ""
-        self.diffusion_steps: int = 10
+        self.inference_cfg_rate: float = 0.7
+        self.max_prompt_length: int = 3
+        self.diffusion_steps: int = 5
         self.block_time: float = 0.25
-        self.crossfade_time: float = 0.05
+        self.crossfade_time: float = 0.02
         self.extra_time_ce: float = 2.5
         self.extra_time: float = 0.5
-        self.extra_time_right: float = 2.0
-        self.I_noise_reduce: bool = False
-        self.inference_cfg_rate: float = 0.7
+        self.extra_time_right: float = 0.02
+        self.reference_audio_path: str = "examples/reference/trump_0.wav"
 
 
 class GUI:
@@ -381,17 +381,6 @@ class GUI:
 
         self.vad_model = AutoModel(model="fsmn-vad", model_revision="v2.0.4")
         self.initialize_variables()
-
-    def initialize_variables(self):
-        self.gui_config.reference_audio_path = "examples/reference/trump_0.wav"
-        self.gui_config.diffusion_steps = int(5)
-        self.gui_config.inference_cfg_rate = float("1")
-        self.gui_config.max_prompt_length = float("3")
-        self.gui_config.block_time = float("0.25")  # change in client too
-        self.gui_config.crossfade_time = float("0.02")  # 0.04
-        self.gui_config.extra_time_ce = float("3.2")
-        self.gui_config.extra_time = float("0.5")
-        self.gui_config.extra_time_right = float("0.02")
         self.start_vc()
 
     def start_vc(self):
@@ -528,41 +517,35 @@ class GUI:
         )[320:]
         print(f"preprocess time: {time.perf_counter() - start_time:.2f}")
 
-        # infer
-        if self.function == "vc":
-            if self.gui_config.extra_time_ce - self.gui_config.extra_time < 0:
-                raise ValueError(
-                    "Content encoder extra context must be greater than DiT extra context!"
-                )
-            start_event = torch.cuda.Event(enable_timing=True)
-            end_event = torch.cuda.Event(enable_timing=True)
-            torch.cuda.synchronize()
-            start_event.record()
-            infer_wav = custom_infer(
-                self.model_set,
-                self.reference_wav,
-                self.gui_config.reference_audio_path,
-                self.input_wav_res,
-                self.skip_head,
-                self.skip_tail,
-                self.return_length,
-                int(self.gui_config.diffusion_steps),
-                self.gui_config.inference_cfg_rate,
-                self.gui_config.max_prompt_length,
-                self.gui_config.extra_time_ce - self.gui_config.extra_time,
+        if self.gui_config.extra_time_ce - self.gui_config.extra_time < 0:
+            raise ValueError(
+                "Content encoder extra context must be greater than DiT extra context!"
             )
-            if self.resampler2 is not None:
-                infer_wav = self.resampler2(infer_wav)
-            end_event.record()
-            torch.cuda.synchronize()  # Wait for the events to be recorded!
-            elapsed_time_ms = start_event.elapsed_time(end_event)
-            print(f"Time taken for VC: {elapsed_time_ms}ms")
-            if not self.vad_speech_detected:
-                infer_wav = torch.zeros_like(self.input_wav[self.extra_frame :])
-        elif self.gui_config.I_noise_reduce:
-            infer_wav = self.input_wav_denoise[self.extra_frame :].clone()
-        else:
-            infer_wav = self.input_wav[self.extra_frame :].clone()
+        start_event = torch.cuda.Event(enable_timing=True)
+        end_event = torch.cuda.Event(enable_timing=True)
+        torch.cuda.synchronize()
+        start_event.record()
+        infer_wav = custom_infer(
+            self.model_set,
+            self.reference_wav,
+            self.gui_config.reference_audio_path,
+            self.input_wav_res,
+            self.skip_head,
+            self.skip_tail,
+            self.return_length,
+            int(self.gui_config.diffusion_steps),
+            self.gui_config.inference_cfg_rate,
+            self.gui_config.max_prompt_length,
+            self.gui_config.extra_time_ce - self.gui_config.extra_time,
+        )
+        if self.resampler2 is not None:
+            infer_wav = self.resampler2(infer_wav)
+        end_event.record()
+        torch.cuda.synchronize()  # Wait for the events to be recorded!
+        elapsed_time_ms = start_event.elapsed_time(end_event)
+        print(f"Time taken for VC: {elapsed_time_ms}ms")
+        if not self.vad_speech_detected:
+            infer_wav = torch.zeros_like(self.input_wav[self.extra_frame :])
 
         conv_input = infer_wav[None, None, : self.sola_buffer_frame + self.sola_search_frame]
 
