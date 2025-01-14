@@ -41,20 +41,22 @@ n_cpu = cpu_count()
 
 class GUIConfig:
     def __init__(self) -> None:
-        self.reference_audio_path: str = ""
-        self.sr_type: str = "sr_model"
-        self.block_time: float = 0.25  # s
-        self.threhold: int = -60
-        self.crossfade_time: float = 0.05
-        self.extra_time_ce: float = 2.5
+        self.diffusion_steps: int = 5
+        self.inference_cfg_rate: float = 0.5
+        self.max_prompt_length: float = 2.5
+        self.block_time: float = 0.3
+        self.crossfade_time: float = 0.02
+        self.extra_time_ce: float = 3.2
         self.extra_time: float = 0.5
-        self.extra_time_right: float = 2.0
-        self.inference_cfg_rate: float = 0.7
+        self.extra_time_right: float = 0.02
+
+        self.sr_type: str = "sr_model"
         self.sg_hostapi: str = ""
         self.sg_input_device: str = ""
         self.sg_output_device: str = ""
         self.samplerate: int = 44100
         self.channels: int = 2  # stereo
+        self.reference_audio_path: str = "examples/reference/trump_0.wav"
 
 
 class GUI:
@@ -425,14 +427,6 @@ class GUI:
                 values["sr_device"],
             ].index(True)
         ]
-        self.gui_config.diffusion_steps = int(10)
-        self.gui_config.inference_cfg_rate = float("0.7")
-        self.gui_config.max_prompt_length = float("3")
-        self.gui_config.block_time = float("0.3")  # 0.54
-        self.gui_config.crossfade_time = float("0.02")
-        self.gui_config.extra_time_ce = float("2.5")
-        self.gui_config.extra_time = float("0.5")
-        self.gui_config.extra_time_right = float("0.02")
 
         self.zc = self.gui_config.samplerate // 50  # 44100 // 100 = 441
         print(f"Blocktime: {self.gui_config.block_time}")

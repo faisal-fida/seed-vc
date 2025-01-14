@@ -358,15 +358,17 @@ n_cpu = cpu_count()
 
 class GUIConfig:
     def __init__(self) -> None:
-        self.reference_audio_path: str = ""
-        self.diffusion_steps: int = 10
+        self.diffusion_steps: int = 5
+        self.inference_cfg_rate: float = 0.5
+        self.max_prompt_length: float = 2.5
         self.block_time: float = 0.3
-        self.crossfade_time: float = 0.05
-        self.extra_time_ce: float = 2.5
+        self.crossfade_time: float = 0.02
+        self.extra_time_ce: float = 3.2
         self.extra_time: float = 0.5
-        self.extra_time_right: float = 2.0
+        self.extra_time_right: float = 0.02
+
+        self.reference_audio_path: str = "examples/reference/trump_0.wav"
         self.I_noise_reduce: bool = False
-        self.inference_cfg_rate: float = 0.7
 
 
 class GUI:
@@ -380,18 +382,6 @@ class GUI:
         from funasr import AutoModel
 
         self.vad_model = AutoModel(model="fsmn-vad", model_revision="v2.0.4")
-        self.initialize_variables()
-
-    def initialize_variables(self):
-        self.gui_config.reference_audio_path = "examples/reference/trump_0.wav"
-        self.gui_config.diffusion_steps = int(5)
-        self.gui_config.inference_cfg_rate = float("1")
-        self.gui_config.max_prompt_length = float("2.5")
-        self.gui_config.block_time = float("0.3")  # change in client too
-        self.gui_config.crossfade_time = float("0.02")  # 0.04
-        self.gui_config.extra_time_ce = float("3.2")
-        self.gui_config.extra_time = float("0.5")
-        self.gui_config.extra_time_right = float("0.02")
         self.start_vc()
 
     def start_vc(self):
