@@ -380,7 +380,7 @@ class GUI:
         from funasr import AutoModel
 
         self.vad_model = AutoModel(model="fsmn-vad", model_revision="v2.0.4")
-        self.initialize_variables()
+        
         self.start_vc()
 
     def start_vc(self):
