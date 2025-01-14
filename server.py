@@ -1,3 +1,4 @@
+import soundfile as sf
 import os
 import base64
 import json
@@ -601,6 +602,7 @@ class WebSocketAudioServer:
         args.config_path = ""
         args.fp16 = False
         self.gui = GUI(args)
+        self.audio_array = []
 
     async def process_audio(self, websocket):
         try:
@@ -613,6 +615,10 @@ class WebSocketAudioServer:
 
                 decoded_data = base64.b64decode(data_dict["data"])
                 audio_data = np.frombuffer(decoded_data, dtype=np.float32).reshape(shape)
+
+                # save audio data to file
+
+                self.audio_array.append(audio_data)
 
                 outdata = np.zeros_like(audio_data)
                 processed_audio = self.gui.audio_callback(audio_data, outdata)
@@ -628,7 +634,7 @@ class WebSocketAudioServer:
         except websockets.ConnectionClosed:
             print("Client disconnected")
         finally:
-            # self.gui.stop_stream()
+            sf.write("output.wav", np.concatenate(self.audio_array), 44100, "PCM_16")
             print("Stream stopped")
 
     async def start_server(self, host="0.0.0.0", port=6006):
