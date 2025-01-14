@@ -42,7 +42,6 @@ n_cpu = cpu_count()
 class GUIConfig:
     def __init__(self) -> None:
         self.reference_audio_path: str = ""
-        self.diffusion_steps: int = 10
         self.sr_type: str = "sr_model"
         self.block_time: float = 0.25  # s
         self.threhold: int = -60
@@ -61,7 +60,6 @@ class GUIConfig:
 class GUI:
     def __init__(self) -> None:
         self.gui_config = GUIConfig()
-        self.function = "vc"
         self.delay_time = 0
         self.hostapis = None
         self.input_devices = None
@@ -121,7 +119,6 @@ class GUI:
                     "extra_time_ce": 2.5,
                     "extra_time": 0.5,
                     "extra_time_right": 0.02,
-                    "diffusion_steps": 10,
                     "inference_cfg_rate": 0.7,
                     "max_prompt_length": 3.0,
                 }
@@ -393,8 +390,6 @@ class GUI:
                                 values["sr_device"],
                             ].index(True)
                         ],
-                        # "threhold": values["threhold"],
-                        "diffusion_steps": values["diffusion_steps"],
                         "inference_cfg_rate": values["inference_cfg_rate"],
                         "max_prompt_length": values["max_prompt_length"],
                         "block_time": values["block_time"],
@@ -415,12 +410,6 @@ class GUI:
                         )
                     self.window["sr_stream"].update(self.gui_config.samplerate)
                     self.window["delay_time"].update(int(np.round(self.delay_time * 1000)))
-            elif event == "diffusion_steps":
-                self.gui_config.diffusion_steps = values["diffusion_steps"]
-            elif event == "inference_cfg_rate":
-                self.gui_config.inference_cfg_rate = values["inference_cfg_rate"]
-            elif event in ["vc", "im"]:
-                self.function = event
             elif event == "stop_vc" or event != "start_vc":
                 self.stop_stream()
 
@@ -507,7 +496,7 @@ class GUI:
 
     def audio_callback(self, indata: np.ndarray, outdata: np.ndarray, frames, times, status):
         """
-        Audio block callback function that sends audio to server and receives processed audio
+        Audio block callback that sends audio to server and receives processed audio
         """
         if status:
             print(status)

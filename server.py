@@ -12,7 +12,7 @@ import torch.nn.functional as F
 import torchaudio.transforms as tat
 from multiprocessing import cpu_count
 import yaml
-## update the path to the root directory of the project 
+
 import torchaudio
 import asyncio
 import websockets
@@ -384,12 +384,12 @@ class GUI:
 
     def initialize_variables(self):
         self.gui_config.reference_audio_path = "examples/reference/trump_0.wav"
-        self.gui_config.diffusion_steps = int(10)
-        self.gui_config.inference_cfg_rate = float("0.7")
-        self.gui_config.max_prompt_length = float("3")
-        self.gui_config.block_time = float("0.3")  # 0.54
-        self.gui_config.crossfade_time = float("0.02")
-        self.gui_config.extra_time_ce = float("2.5")
+        self.gui_config.diffusion_steps = int(5)
+        self.gui_config.inference_cfg_rate = float("0.5")
+        self.gui_config.max_prompt_length = float("2.5")
+        self.gui_config.block_time = float("0.3")  # change in client too
+        self.gui_config.crossfade_time = float("0.02")  # 0.04
+        self.gui_config.extra_time_ce = float("3.2")
         self.gui_config.extra_time = float("0.5")
         self.gui_config.extra_time_right = float("0.02")
         self.start_vc()
