@@ -425,12 +425,29 @@ class GUI:
             ].index(True)
         ]
 
+        self.gui_config.samplerate = (
+                22050
+                if self.gui_config.sr_type == "sr_model"
+                else self.get_device_samplerate()
+            )
+        self.gui_config.channels = self.get_device_channels()
+
         self.zc = self.gui_config.samplerate // 50  # 44100 // 100 = 441
         self.block_frame = (
             int(np.round(self.gui_config.block_time * self.gui_config.samplerate / self.zc))
             * self.zc
         )
         return True
+    
+
+
+
+
+
+
+
+
+
 
     async def connect_websocket(self):
         try:
