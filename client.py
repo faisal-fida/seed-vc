@@ -431,6 +431,13 @@ class GUI:
             ].index(True)
         ]
 
+        self.gui_config.samplerate = (
+                22050
+                if self.gui_config.sr_type == "sr_model"
+                else self.get_device_samplerate()
+            )
+        self.gui_config.channels = self.get_device_channels()
+
         self.zc = self.gui_config.samplerate // 50  # 44100 // 100 = 441
         print(f"Blocktime: {self.gui_config.block_time}")
         self.block_frame = (
@@ -438,6 +445,16 @@ class GUI:
             * self.zc
         )
         return True
+    
+
+
+
+
+
+
+
+
+
 
     async def connect_websocket(self):
         try:
