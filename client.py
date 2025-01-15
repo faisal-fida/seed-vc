@@ -1,3 +1,4 @@
+import soundfile as sf
 import os
 import base64
 import sys
@@ -70,10 +71,10 @@ class GUI:
         self.output_devices_indices = None
         self.stream = None
         self.websocket = None
+        self.is_recording = False
+        self.recorded_audio = []
         self.update_devices()
         self.launcher()
-        self.audio_array_1 = []
-        self.audio_array_2 = []
 
     def load(self):
         try:
@@ -465,6 +466,8 @@ class GUI:
             print(
                 f"Blocksize: {self.block_frame}, Samplerate: {self.gui_config.samplerate}, Channels: {self.gui_config.channels}"
             )
+            self.is_recording = True
+            self.recorded_audio = []
             self.stream = sd.Stream(
                 callback=self.audio_callback,
                 blocksize=self.block_frame,
@@ -478,6 +481,10 @@ class GUI:
     def stop_stream(self):
         global flag_vc
         if flag_vc:
+            self.is_recording = False
+            if len(self.recorded_audio) > 0:
+                recorded_data = np.concatenate(self.recorded_audio, axis=0)
+                sf.write("recorded_audio.wav", recorded_data, self.gui_config.samplerate)
             flag_vc = False
             if self.stream is not None:
                 self.stream.abort()
@@ -497,9 +504,10 @@ class GUI:
         if status:
             print(status)
 
-        audio_array = np.concatenate([self.audio_array_1, indata])
-
         try:
+            if self.is_recording:
+                self.recorded_audio.append(indata.copy())
+
             data_dict = {
                 "shape": indata.shape,
                 "data": base64.b64encode(indata.tobytes()).decode("utf-8"),
@@ -523,8 +531,6 @@ class GUI:
 
         finally:
             import soundfile as sf
-
-            sf.write("input.wav", audio_array, self.gui_config.samplerate, "PCM_16")
 
     def update_devices(self, hostapi_name=None):
         """Get input and output devices."""
