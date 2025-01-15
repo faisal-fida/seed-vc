@@ -375,12 +375,6 @@ class GUI:
                 self.window["sg_output_device"].Update(value=self.gui_config.sg_output_device)
             if event == "start_vc" and not flag_vc:
                 if self.initialize_variables(values):
-                    # self.start_vc() # start voice conversion on server
-                    print("Starting voice conversion")
-                    print(f"Blocktime: {self.gui_config.block_time}")
-                    print(f"Block frame: {self.block_frame}")
-                    print(f"ZC: {self.zc}")
-
                     self.start_stream()
                     settings = {
                         "reference_audio_path": values["reference_audio_path"],
@@ -432,7 +426,6 @@ class GUI:
         ]
 
         self.zc = self.gui_config.samplerate // 50  # 44100 // 100 = 441
-        print(f"Blocktime: {self.gui_config.block_time}")
         self.block_frame = (
             int(np.round(self.gui_config.block_time * self.gui_config.samplerate / self.zc))
             * self.zc
@@ -462,10 +455,10 @@ class GUI:
             if not self.loop.run_until_complete(self.connect_websocket()):
                 return
 
-            print("Starting stream")
-            print(
-                f"Blocksize: {self.block_frame}, Samplerate: {self.gui_config.samplerate}, Channels: {self.gui_config.channels}"
-            )
+            # print("Starting stream")
+            # print(
+            #     f"Blocksize: {self.block_frame}, Samplerate: {self.gui_config.samplerate}, Channels: {self.gui_config.channels}, Block time: {self.gui_config.block_time}, zc: {self.zc}, Diffusion steps: {self.gui_config.diffusion_steps}, Inference cfg rate: {self.gui_config.inference_cfg_rate}, Max prompt length: {self.gui_config.max_prompt_length}, Crossfade time: {self.gui_config.crossfade_time}, Extra time CE: {self.gui_config.extra_time_ce}, Extra time: {self.gui_config.extra_time}, Extra time right: {self.gui_config.extra_time_right}"
+            # )
             self.is_recording = True
             self.recorded_audio = []
             self.stream = sd.Stream(
